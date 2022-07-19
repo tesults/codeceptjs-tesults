@@ -1,0 +1,29 @@
+{
+  "name": "codeceptjs-tesults",
+  "version": "1.0.0",
+  "description": "CodeceptJS Tesults Plugin",
+  "main": "codeceptjs-tesults.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tesults/codeceptjs-tesults.git"
+  },
+  "keywords": [
+    "codeceptjs",
+    "tesults",
+    "reporting",
+    "test",
+    "automation"
+  ],
+  "author": "Tesults",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tesults/codeceptjs-tesults/issues"
+  },
+  "homepage": "https://github.com/tesults/codeceptjs-tesults#readme",
+  "dependencies": {
+    "tesults": "^1.1.3"
+  }
+}
