@@ -20,6 +20,7 @@ module.exports = (config) => {
     if (config["build-name"] !== undefined) {
         try {
             let buildCase = {
+                suite: "[build]",
                 name: config["build-name"],
                 result: config["build-result"] === undefined ? "unknown" : config["build-result"],
                 desc: config["build-description"],
@@ -62,7 +63,8 @@ module.exports = (config) => {
         let testCase = {
             suite: test.parent.title,
             name: test.title,
-            result: result(test.state)
+            result: result(test.state),
+            rawResult: test.state
         }
         // Reason
         if (reasons[test.id] !== undefined) {
@@ -82,6 +84,7 @@ module.exports = (config) => {
                     let testCaseStep = {
                         name: step.name,
                         result: result(step.status),
+                        rawResult: step.status,
                         start: step.startTime,
                         end: step.endTime,
                         duration: step.duration
