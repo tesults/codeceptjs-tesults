@@ -13,15 +13,20 @@ module.exports = (config) => {
         results: {
             cases: []
         },
-        target: config.target
+        target: config.target,
+        metadata: {
+            integration_name: "codeceptjs-tesults",
+            integration_version: "1.2.0",
+            test_framework: "codeceptjs"
+        }
     }
 
     // Build case
     if (config["build-name"] !== undefined) {
         try {
             let buildCase = {
-                suite: "[build]",
                 name: config["build-name"],
+                suite: "[build]",
                 result: config["build-result"] === undefined ? "unknown" : config["build-result"],
                 desc: config["build-description"],
                 reason: config["build-reason"],
@@ -42,6 +47,15 @@ module.exports = (config) => {
             return "unknown"
         }
     }
+
+    let comments = []
+    event.dispatcher.on(event.test.started, (test) => {
+        comments = []
+    })
+
+    event.dispatcher.on(event.step.comment, (step) => {
+        comments.push(step)
+    })
 
     const reasons = {}
     event.dispatcher.on(event.test.failed, (test, error) => {
@@ -91,6 +105,7 @@ module.exports = (config) => {
                     }
                     try {
                         testCaseStep.desc = step.toCode() + " " + step.line()
+                        testCase.steps.push(testCaseStep)
                     } catch (err) {// Omit desc}
                         testCase.steps.push(testCaseStep)
                     }
@@ -108,12 +123,21 @@ module.exports = (config) => {
             Object.keys(test.artifacts).forEach((key) => {
                 files.push(test.artifacts[key])
             })
-            if (files.length > 0) {
-                testCase.files = files
-            }
         }
         // Files
-        // Files coming later - awaiting on resolution by codeceptjs to a potential bug in event emitter for artifacts
+        // Original solution awaiting on resolution by codeceptjs to a potential bug in event emitter for artifacts, alternate added
+        const filePrefix = "tesults:file:"
+        for (let i = 0; i < comments.length; i++) {
+            const c = comments[i]
+            if (c.startsWith(filePrefix)) {
+                files.push(c.substring(filePrefix.length))
+            }
+        }
+
+        if (files.length > 0) {
+            testCase.files = files
+        }
+
         // Save
         data.results.cases.push(testCase)
     })
