@@ -1,12 +1,19 @@
 // codeceptjs-tesults.js
 const tesults = require('tesults')
 const event = require('codeceptjs').event
+const fs = require('fs')
+const path = require('path')
+const packageVersion = require('./package.json').version
  
-module.exports = (config) => {
-    let disabled = false
-    if (config.target === undefined) {
-        disabled = true
-        console.log("Tesults disabled. No target supplied in config.")
+module.exports = (config = {}) => {
+    const outputFile = typeof process.env.TESULTS_OUTPUT_FILE === 'string'
+        ? process.env.TESULTS_OUTPUT_FILE.trim()
+        : ''
+    const hasTarget = config.target !== undefined
+    const disabled = !hasTarget && outputFile === ''
+
+    if (disabled) {
+        console.log("Tesults disabled. No target supplied in config and TESULTS_OUTPUT_FILE is not set.")
     }
 
     const data = {
@@ -16,7 +23,7 @@ module.exports = (config) => {
         target: config.target,
         metadata: {
             integration_name: "codeceptjs-tesults",
-            integration_version: "1.2.0",
+            integration_version: packageVersion,
             test_framework: "codeceptjs"
         }
     }
@@ -73,12 +80,15 @@ module.exports = (config) => {
 
     event.dispatcher.on(event.test.finished, (test) => {
         if (disabled) { return }
+        const rawResult = test.state === undefined && reasons[test.id] !== undefined
+            ? "failed"
+            : test.state
         // Core Properties
         let testCase = {
             suite: test.parent.title,
             name: test.title,
-            result: result(test.state),
-            rawResult: test.state
+            result: result(rawResult),
+            rawResult: rawResult
         }
         // Reason
         if (reasons[test.id] !== undefined) {
@@ -144,16 +154,26 @@ module.exports = (config) => {
 
     event.dispatcher.on(event.all.after, () => {
         if (disabled) { return }
-        console.log('Tesults results uploading...');
-        tesults.results(data, function (err, response) {
-            if (err) {
-                console.log("Tesults library error: " + err)
-            } else {
-                console.log('Success: ' + response.success);
-                console.log('Message: ' + response.message);
-                console.log('Warnings: ' + response.warnings.length);
-                console.log('Errors: ' + response.errors.length);
-            }
-        });
+
+        if (outputFile !== '') {
+            const outputData = Object.assign({}, data, { target: "" })
+            fs.mkdirSync(path.dirname(outputFile), { recursive: true })
+            fs.writeFileSync(outputFile, JSON.stringify(outputData, null, 2))
+            console.log('Tesults results written to ' + outputFile)
+        }
+
+        if (hasTarget) {
+            console.log('Tesults results uploading...');
+            tesults.results(data, function (err, response) {
+                if (err) {
+                    console.log("Tesults library error: " + err)
+                } else {
+                    console.log('Success: ' + response.success);
+                    console.log('Message: ' + response.message);
+                    console.log('Warnings: ' + response.warnings.length);
+                    console.log('Errors: ' + response.errors.length);
+                }
+            });
+        }
     })
 }
